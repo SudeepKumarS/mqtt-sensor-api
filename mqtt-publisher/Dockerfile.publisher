@@ -1,0 +1,14 @@
+# Use the official Python image as the base image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the all the files into the container
+COPY . .
+
+# Install required packages
+RUN pip install --no-cache-dir -r ./requirements.txt
+
+# Run the MQTT publisher script when the container starts
+CMD ["python", "mqtt_publisher.py"]

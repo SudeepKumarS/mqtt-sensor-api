@@ -1,0 +1,78 @@
+version: "3"
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto
+    ports:
+      - "1883:1883"
+    networks:
+      - containernetwork
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  mqtt-publisher:
+    build:
+      context: ./mqtt-publisher
+      dockerfile: Dockerfile.publisher
+    networks:
+      - containernetwork
+    depends_on:
+      - mqtt-broker
+    environment:
+      BROKER_HOST: "mqtt-broker"
+
+  mqtt-subscriber:
+    build:
+      context: ./mqtt-subscriber-mongodb
+      dockerfile: Dockerfile.subscriber
+    networks:
+      - containernetwork
+    depends_on:
+      - mqtt-broker
+      - redis-container
+      - mongo-container
+    environment:
+      MONGO_URI: "mongodb://mongo-container:27017/"
+      REDIS_HOST: "redis-container"
+      BROKER_HOST: "mqtt-broker"
+
+  fastapi-app:
+    build:
+      context: ./fastapi-app
+      dockerfile: Dockerfile.fastapi
+    ports:
+      - "8000:8000"
+    networks:
+      - containernetwork
+    depends_on:
+      - mqtt-broker
+      - mqtt-subscriber
+      - mongo-container
+      - redis-container
+    environment:
+      MONGO_URI: "mongodb://mongo-container:27017/"
+      REDIS_HOST: "redis-container"
+    volumes:
+      - ./logs:/app/logs
+
+  mongo-container:
+    image: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - containernetwork
+    volumes:
+      - mongo-data:/data/db
+
+  redis-container:
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - containernetwork
+
+networks:
+  containernetwork:
+    driver: bridge
+
+volumes:
+  mongo-data:

@@ -1,0 +1,17 @@
+# Use the official Python image as the base image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the all the current directory files into the container
+COPY . .
+
+# Install required packages
+RUN pip install --no-cache-dir -r ./requirements.txt
+
+# Expose the port that FastAPI will run on
+EXPOSE 8000
+
+# Run the FastAPI application when the container starts
+CMD ["python", "main.py"]
